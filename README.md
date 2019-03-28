@@ -63,8 +63,9 @@ being written to disk.
 The class <code>.SoftSwitch()</code> is a software switch which has a <code>
 .press()</code> method it is intended for this to be called from any
 callback. Like <code>pyb.Switch()</code> it has a <code>.value()</code>
-method like pressing the USR switch calling the <code>.press()</code> method
-causes the <code>.value()</code> method return <code>True</code>.
+method. Calling the <code>.press()</code> method is analogous to pressing
+the USR switch, that is it causes the <code>.value()</code> method return
+<code>True</code>.
 </br>
 </br>
 To check the validity of the data set there is a python3 command <code>
