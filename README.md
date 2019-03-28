@@ -17,7 +17,7 @@ on the other.
 </br>
 Using 1 pyboard v1.1 and 1 sensor I have acheived data rates of 5.6kHz passing
 data from one uart to another. But am yet to get any where near that using 2
-pyboards. The best acheivable is 1.2KHz with 1 sensor.
+pyboards. The best acheivable so far is 2.6KHz with 1 sensor.
 </br>
 </br>
 Program <code>log_Rx.py</code> starts by calling the <code>.begin()</code>
@@ -63,7 +63,7 @@ being written to disk.
 The class <code>.SoftSwitch()</code> is a software switch which has a <code>
 .press()</code> method it is intended for this to be called from any
 callback. Like <code>pyb.Switch()</code> it has a <code>.value()</code>
-method like pressing the USR switch calling the <code>.press()<code> method
+method like pressing the USR switch calling the <code>.press()</code> method
 causes the <code>.value()</code> method return <code>True</code>.
 </br>
 </br>
