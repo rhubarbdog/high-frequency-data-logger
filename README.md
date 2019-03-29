@@ -51,13 +51,13 @@ period. The fisrt call takes upto 25 micro seconds longer, this time isn't
 repeated in the data set and can be ignored.
 </br>
 The reciever <code>.logger_Rx()</code> is used as follows <code>log =
-data_logger.logger_Rx(6, 3, pyb.Switch(), '/sd/data.bin', pyb.LED(4))</code>.
-The log object uses uart 6 and has 3 sensors. It is terminated  by pressing
-the USR switch. <code>pyb.Switch()</code> could be a <code>pyb.Pin('X1',
-pyb.Pin.IN, pyb.Pin.PULL_DOWN)</code> set the pin to high to terminate or the
-software switch object below. The <code>log</code> object writes data to file
-<code>/sd/data/bin</code>. LED 4 (blue) will be switched on whilst data is
-being written to disk.
+data_logger.logger_Rx(6, 3, 32, pyb.Switch(), '/sd/data.bin', pyb.LED(4))
+</code>. The log object uses uart 6 and has 3 sensors. And has 2 32kb buffers.
+It is terminated  by pressing the USR switch. <code>pyb.Switch()</code> could
+be a <code>pyb.Pin('X1',pyb.Pin.IN, pyb.Pin.PULL_DOWN)</code> set the pin to
+high to terminate or the software switch object below. The <code>log</code>
+object writes data to file <code>/sd/data/bin</code>. LED 4 (blue) will be
+switched on whilst data is being written to disk.
 </br>
 </br>
 The class <code>.SoftSwitch()</code> is a software switch which has a <code>
