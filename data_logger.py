@@ -1,3 +1,9 @@
+# Data logging at high frequencies
+# Author    - Phil Hall
+#           - https://github/rhubarbdog
+# License   - MIT 2019 see file LICENSE in this repository
+# Published - March 2019
+
 import pyb
 import time
 import array
@@ -91,11 +97,12 @@ class logger_Tx():
         machine.enable_irq()
 
 class logger_Rx():
-    def __init__(self, uart, data_points, kill_switch, file_name,\
+    def __init__(self, uart, data_points, buffer_kb, kill_switch, file_name,\
                  write_LED = None):
+        buffer_kb = min(int(buffer_kb), 4)
         self.uart = pyb.UART(uart, BAUD, BITS, parity = None, stop =1,\
                              timeout = 0, flow = 0, timeout_char = 0,\
-                             read_buf_len = BUFFER_SIZE * SIZE_OF_INT * 4)
+                             read_buf_len = 1024 * buffer_kb)
         self.data_points = data_points + 2
         self.format_ = HEADER_FORMAT
         if data_points > 1:
@@ -110,7 +117,7 @@ class logger_Rx():
         if not self.LED is None:
             self.LED.off()
             
-        scalar = (16 * 1024) // self.size_of_format
+        scalar = (buffer_kb * 1024) // self.size_of_format
         ring_buffer = bytearray(self.size_of_format * (scalar + 128))
         self.ring = memoryview(ring_buffer)
         self.ring_max = len(ring_buffer)
