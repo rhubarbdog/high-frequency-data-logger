@@ -22,9 +22,8 @@ HEADER_FORMAT = '<ii' + SHORT_CHAR
 SIZE_OF_HEADER = ustruct.calcsize(HEADER_FORMAT)
 SHORT_FORMAT = '<' + SHORT_CHAR
 SIZE_OF_SHORT = ustruct.calcsize(SHORT_FORMAT)
-SIZE_OF_INT = ustruct.calcsize('<i')
 BUFFER_SIZE = const(1024)
-BAUD = const(450000)
+BAUD = const(225000)
 BITS = const(8)
 
 class SoftSwitch():
@@ -78,7 +77,7 @@ class logger_Tx():
     
     @micropython.native
     def transmit(self, timer):
-        machine.disable_irq()
+        state = machine.disable_irq()
         
         self.check += 1
         ustruct.pack_into(HEADER_FORMAT, self.buffer_, 0, self.check,\
@@ -94,7 +93,7 @@ class logger_Tx():
 
         self.uart.write(self.buffer_)
         
-        machine.enable_irq()
+        machine.enable_irq(state)
 
 class logger_Rx():
     def __init__(self, uart, data_points, buffer_kb, kill_switch, file_name,\
