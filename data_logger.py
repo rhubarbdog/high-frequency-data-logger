@@ -8,11 +8,7 @@ import pyb
 import time
 import array
 import ustruct
-# These 2 are for performace and consistency. use of
-# .enable_irq() and disable.irq() take longer but improve
-# consistency
 import gc
-import machine
 
 import micropython
 micropython.alloc_emergency_exception_buf(200)
@@ -22,9 +18,26 @@ HEADER_FORMAT = '<ii' + SHORT_CHAR
 SIZE_OF_HEADER = ustruct.calcsize(HEADER_FORMAT)
 SHORT_FORMAT = '<' + SHORT_CHAR
 SIZE_OF_SHORT = ustruct.calcsize(SHORT_FORMAT)
+CRC_CHAR = 'H'
+CRC_FORMAT = '<' + CRC_CHAR
+SIZE_OF_CRC = ustruct.calcsize(CRC_FORMAT)
 BUFFER_SIZE = const(1024)
 BAUD = const(225000)
 BITS = const(8)
+
+@micropython.native
+def calc_crc16(buffer_):
+    crc = 0xFFFF
+    for b in range(len(buffer_) - 2):
+        crc ^= buffer_[b]
+        for _ in range(8):
+            if crc & 0x01:
+                crc >>= 1
+                crc ^= 0xA001
+            else:
+                crc >>= 1
+
+    return (crc & 0xffff)
 
 class SoftSwitch():
     def __init__(self):
@@ -43,7 +56,7 @@ class logger_Tx():
     def __init__(self, uart, sensor_pins, timer, freq):
         self.data_points = len(sensor_pins)
         self.buffer_ = bytearray(((self.data_points - 1) * SIZE_OF_SHORT)\
-                                 + SIZE_OF_HEADER)
+                                 + SIZE_OF_HEADER + SIZE_OF_CRC)
         
         self.timer = pyb.Timer(timer, freq = freq)
 
@@ -77,8 +90,6 @@ class logger_Tx():
     
     @micropython.native
     def transmit(self, timer):
-        state = machine.disable_irq()
-        
         self.check += 1
         ustruct.pack_into(HEADER_FORMAT, self.buffer_, 0, self.check,\
                          time.ticks_diff(time.ticks_us(), self.start),
@@ -91,10 +102,11 @@ class logger_Tx():
                               self.sensors[s].read())
             index += SIZE_OF_SHORT
 
+        crc = calc_crc16(self.buffer_)
+        ustruct.pack_into(CRC_FORMAT, self.buffer_, index, crc)
+        
         self.uart.write(self.buffer_)
         
-        machine.enable_irq(state)
-
 class logger_Rx():
     def __init__(self, uart, data_points, buffer_kb, kill_switch, file_name,\
                  write_LED = None):
@@ -102,10 +114,11 @@ class logger_Rx():
         self.uart = pyb.UART(uart, BAUD, BITS, parity = None, stop =1,\
                              timeout = 0, flow = 0, timeout_char = 0,\
                              read_buf_len = 1024 * buffer_kb)
-        self.data_points = data_points + 2
+        self.data_points = data_points + 3
         self.format_ = HEADER_FORMAT
         if data_points > 1:
             self.format_ += (SHORT_CHAR * (data_points - 1))
+        self.format_ += CRC_CHAR
         self.size_of_format = ustruct.calcsize(self.format_)
         self.file_ = open(file_name, 'wb')
         self.buffer_ = array.array('i', [0 for _ in range(BUFFER_SIZE)])
@@ -126,10 +139,13 @@ class logger_Rx():
 
     @micropython.native
     def ring2array(self):
-        numbers = ustruct.unpack(self.format_,\
-                                 self.ring[self.get: self.get +\
-                                           self.size_of_format])
+        slice_ = self.ring[self.get: self.get + self.size_of_format]
+        crc = calc_crc16(slice_)
+        numbers = ustruct.unpack(self.format_, slice_)
 
+        if numbers[-1] != crc:
+            numbers = numbers[:-1] + (-1, )
+            
         if self.index + self.data_points < BUFFER_SIZE:
             for n in numbers:
                 self.buffer_[self.index] = n
